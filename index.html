@@ -44,6 +44,7 @@ footer{font-size:12px;color:var(--muted);text-align:center;margin-top:6px}
     </div>
   </header>
 
+  <!-- IP Summary Card -->
   <section class="card" id="summaryCard">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
       <div>
@@ -77,6 +78,7 @@ footer{font-size:12px;color:var(--muted);text-align:center;margin-top:6px}
     </div>
   </section>
 
+  <!-- Browser & Client Info -->
   <section class="card">
     <h3 style="margin:0 0 10px 0">Client & Browser details</h3>
     <div class="grid">
@@ -89,9 +91,22 @@ footer{font-size:12px;color:var(--muted);text-align:center;margin-top:6px}
     </div>
   </section>
 
+  <!-- Location Map -->
   <section class="card">
     <h3 style="margin:0 0 10px 0">Location map</h3>
     <div id="map">Loading map…</div>
+  </section>
+
+  <!-- Someone Card -->
+  <section class="card" id="personCard">
+    <h3 style="margin:0 0 10px 0">About Someone</h3>
+    <div style="display:flex;align-items:center;gap:12px">
+      <img src="https://via.placeholder.com/64" alt="Someone" style="border-radius:12px;object-fit:cover">
+      <div>
+        <div class="v" style="font-weight:700;font-size:16px">Someone Name</div>
+        <div class="sub">A short bio or description about this person.</div>
+      </div>
+    </div>
   </section>
 
   <footer class="small">IPkitty - Data not always accurate.</footer>
@@ -107,10 +122,7 @@ footer{font-size:12px;color:var(--muted);text-align:center;margin-top:6px}
   let data=null;
   try{data=await fetchJSON('https://ipapi.co/json/'); data._source='ipapi.co';}
   catch(e){ try{ const ip=(await fetchJSON('https://api.ipify.org?format=json'))?.ip; data=ip?await fetchJSON('https://ipwhois.app/json/'+ip):null; data._source='ipwhois.app';}catch{} }
-
-  // Additional fallback using ipinfo.io (free limited)
-  if(!data){ try{ const token=''; // optional token
-    const d2=await fetchJSON('https://ipinfo.io/json'+(token?`?token=${token}`:'')); if(d2){ data=d2; data._source='ipinfo.io';}}catch{}}
+  if(!data){ try{ const token=''; const d2=await fetchJSON('https://ipinfo.io/json'+(token?`?token=${token}`:'')); if(d2){ data=d2; data._source='ipinfo.io';}}catch{}}
 
   const result={
     ip:data?.ip||data?.ip_address||'—',
@@ -170,6 +182,17 @@ footer{font-size:12px;color:var(--muted);text-align:center;margin-top:6px}
   el('refreshBtn').addEventListener('click',()=>location.reload());
   el('downloadBtn').addEventListener('click',()=>{const blob=new Blob([JSON.stringify({summary:result},null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`iprooster-${result.ip}.json`; document.body.appendChild(a); a.click(); a.remove();});
 })();
+
+// Protections
+document.addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('selectstart', e => e.preventDefault());
+document.addEventListener('dragstart', e => e.preventDefault());
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey && e.shiftKey && e.key === 'I') || (e.ctrlKey && e.key === 's') || (e.key === 'F12')) {
+    e.preventDefault();
+    alert('hi');
+  }
+});
 </script>
 </body>
 </html>
