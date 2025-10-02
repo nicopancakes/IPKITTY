@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>iprooster — What's my IP?</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+:root{
+  --bg:#0b0b0b; --card:#0f0f0f; --muted:#bdbdbd; --accent:#e4b000; --glass: rgba(255,255,255,0.03);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+}
+html,body{height:100%;margin:0;background:linear-gradient(180deg,#020202 0%, #111 100%);color:#fff}
+.wrap{max-width:980px;margin:36px auto;padding:18px;display:grid;gap:18px;grid-template-columns:1fr;align-items:start}
+header{display:flex;align-items:center;gap:12px}
+.logo img{width:64px;height:64px;border-radius:12px;object-fit:cover}
+h1{margin:0;font-size:20px}
+p.lead{margin:0;color:var(--muted);font-size:13px}
+.card{background:var(--card);border-radius:12px;padding:16px;box-shadow:0 6px 24px rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.02)}
+.big-ip{font-size:44px;font-weight:700;letter-spacing:0.5px}
+.sub{color:var(--muted);font-size:13px;margin-top:6px}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.kv{display:flex;justify-content:space-between;align-items:flex-start;padding:10px;border-radius:8px;background:var(--glass);border:1px solid rgba(255,255,255,0.02); word-break:break-word;}
+.k{font-size:13px;color:var(--muted);flex-shrink:0;margin-right:6px} 
+.v{font-weight:600;flex:1}
+.controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+button{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:8px 10px;border-radius:8px;color:#fff;font-weight:600;cursor:pointer}
+button.primary{background:linear-gradient(90deg,var(--accent),#ff9f43);color:#090909;border:none}
+.meta{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.chip{background:rgba(255,255,255,0.03);padding:6px 8px;border-radius:999px;font-size:12px;color:var(--muted);border:1px solid rgba(255,255,255,0.02)}
+#map{height:280px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);overflow:hidden}
+footer{font-size:12px;color:var(--muted);text-align:center;margin-top:6px}
+.small{font-size:12px;color:var(--muted)}
+@media (max-width:720px){.grid{grid-template-columns:1fr}.big-ip{font-size:34px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo"><img src="https://files.catbox.moe/h1nq3n.png" alt=""></div>
+    <div>
+      <h1>IPkitty</h1>
+      <p class="lead">IPKITTY - No fluff.</p>
+    </div>
+  </header>
+
+  <section class="card" id="summaryCard">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
+      <div>
+        <div class="big-ip" id="ipDisplay">—</div>
+        <div class="sub" id="ipType">—</div>
+      </div>
+      <div style="text-align:right">
+        <div class="controls">
+          <button id="refreshBtn">Refresh</button>
+          <button id="copyBtn">Copy IP</button>
+          <button id="downloadBtn" class="primary">Download JSON</button>
+        </div>
+        <div class="meta" id="metaChips"></div>
+      </div>
+    </div>
+    <div style="margin-top:14px">
+      <div class="grid" id="infoGrid">
+        <div class="kv"><div class="k">IP :</div><div class="v" id="info_ip">—</div></div>
+        <div class="kv"><div class="k">Version :</div><div class="v" id="info_version">—</div></div>
+        <div class="kv"><div class="k">Hostname / Reverse :</div><div class="v" id="info_hostname">—</div></div>
+        <div class="kv"><div class="k">ISP / Org :</div><div class="v" id="info_org">—</div></div>
+        <div class="kv"><div class="k">ASN :</div><div class="v" id="info_asn">—</div></div>
+        <div class="kv"><div class="k">Proxy / VPN :</div><div class="v" id="info_proxy">—</div></div>
+        <div class="kv"><div class="k">City :</div><div class="v" id="info_city">—</div></div>
+        <div class="kv"><div class="k">Region :</div><div class="v" id="info_region">—</div></div>
+        <div class="kv"><div class="k">Country :</div><div class="v" id="info_country">—</div></div>
+        <div class="kv"><div class="k">Postal :</div><div class="v" id="info_postal">—</div></div>
+        <div class="kv"><div class="k">LAT / LON :</div><div class="v" id="info_loc">—</div></div>
+        <div class="kv"><div class="k">Timezone :</div><div class="v" id="info_tz">—</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h3 style="margin:0 0 10px 0">Client & Browser details</h3>
+    <div class="grid">
+      <div class="kv"><div class="k">User agent :</div><div class="v" id="ua">—</div></div>
+      <div class="kv"><div class="k">Platform :</div><div class="v" id="platform">—</div></div>
+      <div class="kv"><div class="k">Browser :</div><div class="v" id="browser">—</div></div>
+      <div class="kv"><div class="k">Screen Reso :</div><div class="v" id="screen">—</div></div>
+      <div class="kv"><div class="k">Languages :</div><div class="v" id="langs">—</div></div>
+      <div class="kv"><div class="k">Local time :</div><div class="v" id="localtime">—</div></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h3 style="margin:0 0 10px 0">Location map</h3>
+    <div id="map">Loading map…</div>
+  </section>
+
+  <footer class="small">IPkitty - Data not always accurate.</footer>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+(async function(){
+  const el=id=>document.getElementById(id), put=(id,v)=>el(id).textContent=v||'—', chips=el('metaChips');
+
+  const fetchJSON=async(url,t=7000)=>{const c=new AbortController(),id=setTimeout(()=>c.abort(),t); try{const r=await fetch(url,{signal:c.signal}); clearTimeout(id); return await r.json();}catch(e){clearTimeout(id);return null;}};
+
+  let data=null;
+  try{data=await fetchJSON('https://ipapi.co/json/'); data._source='ipapi.co';}
+  catch(e){ try{ const ip=(await fetchJSON('https://api.ipify.org?format=json'))?.ip; data=ip?await fetchJSON('https://ipwhois.app/json/'+ip):null; data._source='ipwhois.app';}catch{} }
+
+  // Additional fallback using ipinfo.io (free limited)
+  if(!data){ try{ const token=''; // optional token
+    const d2=await fetchJSON('https://ipinfo.io/json'+(token?`?token=${token}`:'')); if(d2){ data=d2; data._source='ipinfo.io';}}catch{}}
+
+  const result={
+    ip:data?.ip||data?.ip_address||'—',
+    version:data?.version||(data?.ip?.includes(':')?'IPv6':'IPv4')||'—',
+    hostname:data?.hostname||data?.reverse||'—',
+    org:data?.org||data?.isp||'—',
+    asn:data?.asn||data?.asn_number||'—',
+    proxy:(data?.proxy||data?.threat?.is_proxy)?'Yes':'No',
+    city:data?.city||data?.region||'—',
+    region:data?.region||data?.region_name||'—',
+    country:data?.country_name||data?.country||'—',
+    postal:data?.postal||data?.postal_code||'—',
+    lat:data?.latitude||data?.lat||0,
+    lon:data?.longitude||data?.lon||0,
+    timezone:data?.timezone||data?.time_zone||'—',
+    _source:data?data._source:'unknown'
+  };
+
+  put('ipDisplay',result.ip);
+  put('ipType',result.version);
+  put('info_ip',result.ip);
+  put('info_version',result.version);
+  put('info_hostname',result.hostname);
+  put('info_org',result.org);
+  put('info_asn',result.asn);
+  put('info_proxy',result.proxy);
+  put('info_city',result.city);
+  put('info_region',result.region);
+  put('info_country',result.country);
+  put('info_postal',result.postal);
+  put('info_loc',`${result.lat.toFixed(5)}, ${result.lon.toFixed(5)}`);
+  put('info_tz',result.timezone);
+
+  // Browser info
+  put('ua',navigator.userAgent);
+  put('platform',navigator.platform);
+  put('browser',navigator.appVersion||'—');
+  put('screen',`${screen.width}×${screen.height}`);
+  put('langs',navigator.languages?navigator.languages.join(', '):navigator.language);
+  put('localtime',new Date().toLocaleString());
+
+  const addChip=t=>{const d=document.createElement('div');d.className='chip';d.textContent=t;chips.appendChild(d);}
+  addChip(`Source: ${result._source}`);
+  addChip(`VPN/Proxy: ${result.proxy}`);
+
+  // Map
+  try{
+    if(!isNaN(result.lat)&&!isNaN(result.lon)){
+      const map=L.map('map').setView([result.lat,result.lon],10);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap contributors'}).addTo(map);
+      L.marker([result.lat,result.lon]).addTo(map).bindPopup(`<b>${result.ip}</b><br>${result.city}, ${result.region}`).openPopup();
+    }else el('map').textContent='Location unavailable';
+  }catch(e){el('map').textContent='Map failed to load';}
+
+  // Buttons
+  el('copyBtn').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(result.ip); el('copyBtn').textContent='Copied!'; setTimeout(()=>el('copyBtn').textContent='Copy IP',1400);}catch(e){alert('Clipboard error:'+e)}})
+  el('refreshBtn').addEventListener('click',()=>location.reload());
+  el('downloadBtn').addEventListener('click',()=>{const blob=new Blob([JSON.stringify({summary:result},null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`iprooster-${result.ip}.json`; document.body.appendChild(a); a.click(); a.remove();});
+})();
+</script>
+</body>
+</html>
