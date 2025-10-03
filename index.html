@@ -170,7 +170,7 @@ footer{font-size:12px;color:var(--muted);text-align:center;margin-top:6px}
   // Buttons
   el('copyBtn').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(result.ip); el('copyBtn').textContent='Copied!'; setTimeout(()=>el('copyBtn').textContent='Copy IP',1400);}catch(e){alert('Clipboard error:'+e)}})
   el('refreshBtn').addEventListener('click',()=>location.reload());
-  el('downloadBtn').addEventListener('click',()=>{const blob=new Blob([JSON.stringify({summary:result},null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`iprooster-${result.ip}.json`; document.body.appendChild(a); a.click(); a.remove();});
+  el('downloadBtn').addEventListener('click',()=>{const blob=new Blob([JSON.stringify({summary:result},null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`ipkitty-${result.ip}.json`; document.body.appendChild(a); a.click(); a.remove();});
 })();
 
 // Protections
